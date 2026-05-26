@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>goMFP - Go MultiFunPlayer</title>
+    <!-- Google Fonts: Outfit & Roboto Mono -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <!-- Icon library (Material Icons) -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <!-- CSS stylesheet -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="glass-bg"></div>
+
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-logo">
+                <span class="material-icons-round glow-text">settings_input_hdmi</span>
+                <h1>goMFP</h1>
+            </div>
+            <div class="header-status">
+
+                <div class="status-item" style="gap: 6px;">
+                    <span class="material-icons-round" style="font-size: 1.1rem; color: var(--primary);">translate</span>
+                    <select id="header-lang-select" class="styled-select" style="padding: 2px 6px; font-size: 0.8rem; height: auto; border: none; background: transparent; cursor: pointer; color: var(--text-primary);">
+                        <option value="ko">KO</option>
+                        <option value="en">EN</option>
+                    </select>
+                </div>
+                <div class="status-item" id="player-indicator">
+                    <span class="status-dot disconnected"></span>
+                    <span class="status-label" data-i18n="player_offline">Player: Offline</span>
+                </div>
+                <div class="status-item" id="output-indicator">
+                    <span class="status-dot disconnected"></span>
+                    <span class="status-label" data-i18n="output_offline">Output: Offline</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Workspace -->
+        <main class="app-workspace">
+            
+            <!-- LEFT PANEL: Media Sources & Control -->
+            <section class="panel glass-panel" id="panel-media">
+                <div class="panel-header">
+                    <span class="material-icons-round">play_circle_filled</span>
+                    <h2 data-i18n="panel_media_title">미디어 및 스크립트</h2>
+                </div>
+                <div class="panel-body">
+                    <!-- Media Source Selection -->
+                    <div class="card">
+                        <h3 data-i18n="player_card_title">플레이어 연동</h3>
+                        <div class="form-row">
+                            <select id="player-select" class="styled-select" style="flex: 1; min-width: 0;">
+                                <option value="internal" data-i18n="player_select_internal">내부 재생기 (Internal)</option>
+                                <option value="mpchc" data-i18n="player_select_mpchc">MPC-HC</option>
+                                <option value="mpv" data-i18n="player_select_mpv">MPV (Named Pipe)</option>
+                                <option value="vlc" data-i18n="player_select_vlc">VLC</option>
+                                <option value="deovr" data-i18n="player_select_deovr">DeoVR</option>
+                                <option value="heresphere" data-i18n="player_select_heresphere">HereSphere</option>
+                            </select>
+                            <button id="player-connect-btn" class="btn btn-primary" data-i18n="connect">연결</button>
+                        </div>
+                        <div class="form-group" id="player-endpoint-group">
+                            <label for="player-endpoint" data-i18n="endpoint_label">주소 / 파이프 이름</label>
+                            <input type="text" id="player-endpoint" class="styled-input" placeholder="localhost:13579">
+                        </div>
+                        <div class="form-group" id="player-password-group" style="display: none;">
+                            <label for="player-password" data-i18n="password_label">비밀번호 (VLC 전용)</label>
+                            <input type="password" id="player-password" class="styled-input" placeholder="VLC 웹 비밀번호">
+                        </div>
+                        <div class="form-row" style="justify-content: space-between; align-items: center; width: 100%; flex-wrap: wrap; gap: 8px;">
+                            <div class="checkbox-row">
+                                <input type="checkbox" id="player-autoconnect">
+                                <label for="player-autoconnect" data-i18n="autoconnect_label">시작 시 자동 연결</label>
+                            </div>
+                            <button id="player-save-btn" class="btn btn-icon" title="저장" data-i18n-title="save_tooltip">
+                                <span class="material-icons-round">save</span>
+                            </button>
+                        </div>
+                    </div>
+
+
+                    <!-- Script Directories Config -->
+                    <div class="card">
+                        <h3 data-i18n="script_library_title">스크립트 라이브러리 경로 설정</h3>
+                        <div class="form-row" style="margin-bottom: 8px;">
+                            <input type="text" id="script-dir-input" class="styled-input" placeholder="예: C:\funscripts" data-i18n-placeholder="script_library_placeholder" style="flex: 1; min-width: 0;">
+                            <button id="script-dir-browse-btn" class="btn btn-outline" style="flex-shrink: 0; white-space: nowrap; padding: 10px 12px;" title="폴더 선택" data-i18n-title="folder_modal_title">
+                                <span class="material-icons-round" style="font-size: 1.2rem;">folder_open</span>
+                            </button>
+                        </div>
+                        <button id="script-dir-add-btn" class="btn btn-primary" style="width: 100%; justify-content: center;" data-i18n="add">추가</button>
+                        <div class="script-dirs-list" id="script-dirs-list-container" style="margin-top: 10px; display: flex; flex-direction: column; gap: 8px; max-height: 150px; overflow-y: auto;">
+                            <!-- Rendered by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Playback State -->
+                    <div class="card playback-card">
+                        <div class="video-info">
+                            <span class="material-icons-round video-icon">movie</span>
+                            <div class="video-details">
+                                <div class="video-title" id="video-title" data-i18n="no_video">재생 중인 비디오 없음</div>
+                                <div class="video-path" id="video-path">-</div>
+                            </div>
+                        </div>
+
+                        <!-- Heatmap Canvas -->
+                        <div class="heatmap-container">
+                            <canvas id="heatmap-canvas"></canvas>
+                            <div class="heatmap-time" id="heatmap-time">00:00 / 00:00</div>
+                        </div>
+
+                        <!-- Progress Bar & Slider -->
+                        <div class="progress-container">
+                            <input type="range" id="progress-slider" min="0" max="100" value="0" class="styled-range">
+                        </div>
+
+                        <!-- Controls -->
+                        <div class="playback-controls">
+                            <button id="play-btn" class="btn btn-circle">
+                                <span class="material-icons-round">play_arrow</span>
+                            </button>
+                            <button id="pause-btn" class="btn btn-circle">
+                                <span class="material-icons-round">pause</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- CENTER PANEL: Axis Config & Calibration -->
+            <section class="panel glass-panel" id="panel-axes">
+                <div class="panel-header">
+                    <span class="material-icons-round">tune</span>
+                    <h2 data-i18n="panel_axes_title">축 제어 및 조정 (Device Axes)</h2>
+                </div>
+                <div class="panel-body">
+                    <!-- Axis Selector Tabs -->
+                    <div class="axis-tabs" id="axis-tab-list">
+                        <!-- Filled by JS -->
+                    </div>
+
+                    <!-- Active Tab Editor Container -->
+                    <div class="card axis-editor-card" id="axis-editor">
+                        <div class="axis-editor-header">
+                            <div class="axis-editor-title">
+                                <span class="axis-badge" id="axis-editor-badge">L0</span>
+                                <h3 id="axis-editor-name">Up/Down</h3>
+                            </div>
+                            <div class="toggle-row">
+                                <input type="checkbox" id="axis-enabled" class="toggle-switch">
+                                <label for="axis-enabled" data-i18n="axis_enabled">활성화</label>
+                            </div>
+                        </div>
+
+                        <!-- Real-time Position Visualizer -->
+                        <div class="axis-visualizer">
+                            <div class="bar-container">
+                                <div class="bar-fill" id="axis-bar-fill"></div>
+                                <div class="bar-marker" id="axis-bar-marker" style="left: 50%;"></div>
+                            </div>
+                            <div class="bar-labels">
+                                <span>computed: <strong id="axis-val-computed">0.50</strong></span>
+                                <span>actual: <strong id="axis-val-actual">0.50</strong></span>
+                            </div>
+                        </div>
+
+                        <!-- Drag and Drop Funscript Dropzone -->
+                        <div class="dropzone" id="script-dropzone">
+                            <span class="material-icons-round">publish</span>
+                            <p data-i18n="dropzone_desc">여기에 <strong>.funscript</strong> 또는 <strong>.csv</strong> 파일을 드래그 앤 드롭 하거나 클릭하여 로드하세요.</p>
+                            <input type="file" id="script-file-input" style="display: none;" accept=".funscript,.csv">
+                            <div class="loaded-script-info" id="loaded-script-info" data-i18n="loaded_script_none">
+                                로드된 스크립트: 없음
+                            </div>
+                        </div>
+ 
+                        <!-- Tuning Parameters Grid -->
+                        <div class="axis-params-grid">
+                            <div class="form-group">
+                                <label for="axis-range" data-i18n="axis_limit_label">최소 / 최대 범위 (Limit)</label>
+                                <div class="dual-range">
+                                    <input type="range" id="axis-min" min="0" max="1" step="0.01" value="0" class="styled-range">
+                                    <input type="range" id="axis-max" min="0" max="1" step="0.01" value="1" class="styled-range">
+                                </div>
+                                <div class="range-labels">
+                                    <span>Min: <span id="axis-min-lbl">0.0</span></span>
+                                    <span>Max: <span id="axis-max-lbl">1.0</span></span>
+                                </div>
+                            </div>
+ 
+                            <div class="form-group">
+                                <label for="axis-offset" data-i18n="axis_offset_label">오프셋 (Offset)</label>
+                                <input type="range" id="axis-offset" min="-1.0" max="1.0" step="0.01" value="0" class="styled-range">
+                                <div class="range-labels">
+                                    <span>Offset: <span id="axis-offset-lbl">0.00</span>s</span>
+                                </div>
+                                <div class="checkbox-row" style="margin-top: 8px;">
+                                    <input type="checkbox" id="use-global-offset">
+                                    <label for="use-global-offset" data-i18n="use_global_offset">전역 오프셋 사용</label>
+                                </div>
+                            </div>
+ 
+                            <div class="form-group">
+                                <label for="axis-interpolation" data-i18n="axis_interpolation_label">보간 방식</label>
+                                <select id="axis-interpolation" class="styled-select">
+                                    <option value="linear" data-i18n="axis_interpolation_linear">Linear (선형)</option>
+                                    <option value="pchip" data-i18n="axis_interpolation_pchip">Pchip (부드러운 곡선)</option>
+                                    <option value="makima" data-i18n="axis_interpolation_makima">Makima (정밀 곡선)</option>
+                                    <option value="step" data-i18n="axis_interpolation_step">Step (계단형)</option>
+                                </select>
+                            </div>
+ 
+                            <div class="form-group inline-group">
+                                <div class="checkbox-row">
+                                    <input type="checkbox" id="axis-invert">
+                                    <label for="axis-invert" data-i18n="axis_invert_label">출력 반전 (Invert)</label>
+                                </div>
+                            </div>
+                        </div>
+ 
+                        <!-- Auto Home Config -->
+                        <div class="axis-sub-section">
+                            <h4 data-i18n="auto_home_title">오토 홈 (Auto Home)</h4>
+                            <div class="axis-params-grid">
+                                <div class="checkbox-row">
+                                    <input type="checkbox" id="axis-autohome">
+                                    <label for="axis-autohome" data-i18n="auto_home_enabled">오토 홈 활성화</label>
+                                </div>
+                                <div class="form-group">
+                                    <label for="axis-autohomedelay" data-i18n="auto_home_delay_label">복귀 딜레이 (초)</label>
+                                    <input type="number" id="axis-autohomedelay" class="styled-input" min="0.1" step="0.1" value="5.0">
+                                </div>
+                            </div>
+                        </div>
+ 
+                        <!-- Motion Provider Config -->
+                        <div class="axis-sub-section">
+                            <h4 data-i18n="motion_provider_title">자체 모션 생성기 (Motion Provider)</h4>
+                            <div class="axis-params-grid">
+                                <div class="form-group">
+                                    <label for="axis-motion-type" data-i18n="motion_type_label">모션 타입</label>
+                                    <select id="axis-motion-type" class="styled-select">
+                                        <option value="none" data-i18n="motion_type_none">사용 안함 (None)</option>
+                                        <option value="sine">Sine Wave</option>
+                                        <option value="triangle">Triangle Wave</option>
+                                        <option value="saw">Sawtooth Wave</option>
+                                        <option value="square">Square Wave</option>
+                                        <option value="double_bounce">Double Bounce</option>
+                                        <option value="sharp_bounce">Sharp Bounce</option>
+                                        <option value="random">Random (OpenSimplex Noise)</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="axis-motion-speed" data-i18n="motion_speed_label">속도배율 (Speed)</label>
+                                    <input type="number" id="axis-motion-speed" class="styled-input" min="0.01" step="0.05" value="1.0">
+                                </div>
+                                <div class="form-group">
+                                    <label for="axis-motion-range" data-i18n="motion_range_label">진폭 (Range)</label>
+                                    <input type="range" id="axis-motion-range" min="0" max="1" step="0.01" value="0.5" class="styled-range">
+                                </div>
+                                <div class="form-group">
+                                    <label for="axis-motion-offset" data-i18n="motion_offset_label">기준점 (Offset)</label>
+                                    <input type="range" id="axis-motion-offset" min="0" max="1" step="0.01" value="0.5" class="styled-range">
+                                </div>
+                            </div>
+                        </div>
+ 
+                        <div class="axis-editor-actions">
+                            <button id="axis-save-btn" class="btn btn-success" data-i18n="axis_save_btn">
+                                <span class="material-icons-round">check</span> 축 설정 저장
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- RIGHT PANEL: Output Targets & Live Stream Terminal -->
+            <section class="panel glass-panel" id="panel-outputs">
+                <div class="panel-header">
+                    <span class="material-icons-round">settings_input_component</span>
+                    <h2 data-i18n="panel_outputs_title">출력 장치 연동 및 로그</h2>
+                </div>
+                <div class="panel-body">
+                    <!-- Output selection and switches -->
+                    <div class="card">
+                        <h3 data-i18n="output_list_title">출력 채널 관리</h3>
+                        <div class="outputs-list" id="outputs-list-container">
+                            <!-- UDP -->
+                            <div class="output-row">
+                                <div class="output-label">
+                                    <h4>UDP</h4>
+                                    <span>127.0.0.1:8000</span>
+                                </div>
+                                <div class="toggle-row">
+                                    <button class="btn btn-sm btn-outline" onclick="openOutputConfig('udp')">설정</button>
+                                    <input type="checkbox" id="out-udp-status" class="toggle-switch">
+                                </div>
+                            </div>
+                            <!-- TCP -->
+                            <div class="output-row">
+                                <div class="output-label">
+                                    <h4>TCP</h4>
+                                    <span>127.0.0.1:8000</span>
+                                </div>
+                                <div class="toggle-row">
+                                    <button class="btn btn-sm btn-outline" onclick="openOutputConfig('tcp')">설정</button>
+                                    <input type="checkbox" id="out-tcp-status" class="toggle-switch">
+                                </div>
+                            </div>
+                            <!-- WebSocket -->
+                            <div class="output-row">
+                                <div class="output-label">
+                                    <h4>WebSocket</h4>
+                                    <span>ws://127.0.0.1:8000/ws</span>
+                                </div>
+                                <div class="toggle-row">
+                                    <button class="btn btn-sm btn-outline" onclick="openOutputConfig('websocket')">설정</button>
+                                    <input type="checkbox" id="out-websocket-status" class="toggle-switch">
+                                </div>
+                            </div>
+                            <!-- File -->
+                            <div class="output-row">
+                                <div class="output-label">
+                                    <h4>텍스트 파일 기록</h4>
+                                    <span>output_record.txt</span>
+                                </div>
+                                <div class="toggle-row">
+                                    <button class="btn btn-sm btn-outline" onclick="openOutputConfig('file')">설정</button>
+                                    <input type="checkbox" id="out-file-status" class="toggle-switch">
+                                </div>
+                            </div>
+                            <!-- Serial/COM -->
+                            <div class="output-row">
+                                <div class="output-label">
+                                    <h4>시리얼 (Serial/COM)</h4>
+                                    <span>COM3 (115200bps)</span>
+                                </div>
+                                <div class="toggle-row">
+                                    <button class="btn btn-sm btn-outline" onclick="openOutputConfig('serial')">설정</button>
+                                    <input type="checkbox" id="out-serial-status" class="toggle-switch">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Live TCode Stream Terminal -->
+                    <div class="card terminal-card">
+                        <div class="terminal-header">
+                            <h3 data-i18n="terminal_title">TCode 실시간 출력 모니터</h3>
+                            <button id="terminal-clear-btn" class="btn btn-xs btn-outline" data-i18n="clear">지우기</button>
+                        </div>
+                        <div class="terminal-console" id="terminal-console">
+                            <!-- Outgoing TCode text appended here -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Output Config Modal -->
+    <div class="modal-overlay" id="output-modal">
+        <div class="modal glass-panel">
+            <div class="modal-header">
+                <h3 id="modal-title" data-i18n="modal_output_config_title">출력 장치 설정</h3>
+                <span class="material-icons-round close-btn" onclick="closeOutputConfig()">close</span>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="modal-output-name">
+                <div class="form-group" id="modal-endpoint-group">
+                    <label for="modal-endpoint" id="modal-endpoint-label" data-i18n="modal_endpoint_address">연결 주소</label>
+                    <div class="form-row" id="serial-port-select-row" style="display: none; flex-direction: column; gap: 8px; margin-bottom: 8px;">
+                        <label for="modal-serial-ports-select" style="font-size: 0.8rem; color: var(--text-secondary);" data-i18n="serial_scanned_label">시스템 장치 목록</label>
+                        <select id="modal-serial-ports-select" class="styled-select" style="width: 100%;"></select>
+                    </div>
+                    <input type="text" id="modal-endpoint" class="styled-input" style="width: 100%;">
+                </div>
+                <div class="form-group" id="modal-baudrate-group">
+                    <label for="modal-baudrate" data-i18n="modal_baudrate_label">보오레이트 (Baud Rate)</label>
+                    <select id="modal-baudrate" class="styled-select">
+                        <option value="9600">9600 bps</option>
+                        <option value="19200">19200 bps</option>
+                        <option value="38400">38400 bps</option>
+                        <option value="57600">57600 bps</option>
+                        <option value="115200" selected>115200 bps</option>
+                        <option value="230400">230400 bps</option>
+                        <option value="460800">460800 bps</option>
+                        <option value="921600">921600 bps</option>
+                    </select>
+                </div>
+                <div class="form-group" id="modal-filepath-group">
+                    <label for="modal-filepath" data-i18n="modal_filepath_label">저장 파일 경로</label>
+                    <input type="text" id="modal-filepath" class="styled-input" placeholder="output_record.txt">
+                </div>
+                <div class="checkbox-row">
+                    <input type="checkbox" id="modal-autoconnect">
+                    <label for="modal-autoconnect" data-i18n="autoconnect_label">시작 시 자동 연결</label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeOutputConfig()" data-i18n="modal_cancel">취소</button>
+                <button class="btn btn-primary" onclick="saveOutputConfig()" data-i18n="modal_save">저장</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Folder Browse Modal -->
+    <div class="modal-overlay" id="folder-browse-modal">
+        <div class="modal glass-panel" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3 data-i18n="folder_modal_title">폴더 찾아보기</h3>
+                <span class="material-icons-round close-btn" onclick="closeFolderBrowser()">close</span>
+            </div>
+            <div class="modal-body" style="display: flex; flex-direction: column; gap: 14px; max-height: 450px;">
+                <div class="form-group" id="browse-drive-group" style="display: none;">
+                    <label for="browse-drive-select" data-i18n="folder_modal_drive">드라이브 선택</label>
+                    <select id="browse-drive-select" class="styled-select"></select>
+                </div>
+                <div class="browse-current-path" style="background: rgba(0,0,0,0.2); padding: 8px 12px; border-radius: 6px; font-family: var(--font-mono); font-size: 0.85rem; word-break: break-all; border: 1px solid var(--panel-border); display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+                    <span id="browse-current-path-lbl">/</span>
+                    <button class="btn btn-xs btn-outline" id="browse-parent-btn" style="padding: 4px 8px; font-size: 0.75rem; display: flex; align-items: center; gap: 2px;">
+                        <span class="material-icons-round" style="font-size: 1rem;">arrow_upward</span><span data-i18n="folder_modal_parent">상위</span>
+                    </button>
+                </div>
+                <div class="browse-list-container" id="browse-list" style="border: 1px solid var(--panel-border); border-radius: 8px; background: rgba(0,0,0,0.1); height: 220px; overflow-y: auto; padding: 6px; display: flex; flex-direction: column; gap: 4px;">
+                    <!-- Folders rendered here by JS -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeFolderBrowser()" data-i18n="modal_cancel">취소</button>
+                <button class="btn btn-primary" id="browse-select-btn" data-i18n="folder_modal_select">이 폴더 선택</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JS scripts -->
+    <script src="js/app.js?v=20260527"></script>
+</body>
+</html>
