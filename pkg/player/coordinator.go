@@ -646,6 +646,9 @@ func (c *Coordinator) ConnectOutput(name string) {
 			endpoint = oConf.Endpoint
 		}
 		o.Connect(endpoint)
+		// Mark as enabled in settings so the UI ticker reflects connection intent
+		oConf.Enabled = true
+		c.sm.Save()
 	}
 }
 
@@ -654,7 +657,23 @@ func (c *Coordinator) DisconnectOutput(name string) {
 	defer c.mu.Unlock()
 	if o, ok := c.outputs[name]; ok {
 		o.Disconnect()
+		// Mark as disabled in settings so the UI ticker reflects disconnection intent
+		if oConf, ok2 := c.sm.Data.OutputTargets[name]; ok2 {
+			oConf.Enabled = false
+			c.sm.Save()
+		}
 	}
+}
+
+// GetOutputStatuses returns the actual runtime connection status for each output
+func (c *Coordinator) GetOutputStatuses() map[string]string {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	res := make(map[string]string)
+	for name, o := range c.outputs {
+		res[name] = string(o.Status())
+	}
+	return res
 }
 
 func (c *Coordinator) SetAxisSettings(axisName string, set *settings.AxisSettings) {

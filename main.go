@@ -1412,23 +1412,23 @@ func main() {
 					}
 				})
 
-				// 4. Outputs switch checkbox sync
-				sm.Mu.RLock()
+				// 4. Outputs switch checkbox sync (use actual runtime connection status)
+				outputStatuses := coord.GetOutputStatuses()
 				type chkState struct {
-					key     string
-					enabled bool
+					key       string
+					connected bool
 				}
 				var chkStates []chkState
 				for _, k := range []string{"udp", "tcp", "websocket", "serial", "file"} {
-					chkStates = append(chkStates, chkState{key: k, enabled: sm.Data.OutputTargets[k].Enabled})
+					st := outputStatuses[k]
+					chkStates = append(chkStates, chkState{key: k, connected: st == "connected"})
 				}
-				sm.Mu.RUnlock()
 
 				fyne.Do(func() {
 					for _, state := range chkStates {
 						chk := outputCheckboxes[state.key]
-						if chk != nil && chk.Checked != state.enabled {
-							chk.Checked = state.enabled
+						if chk != nil && chk.Checked != state.connected {
+							chk.Checked = state.connected
 							chk.Refresh()
 						}
 					}
