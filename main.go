@@ -1152,8 +1152,19 @@ func main() {
 		if applyFyneLanguage != nil {
 			applyFyneLanguage(code)
 		}
+		ws.BroadcastSettings()
 		ws.RebindServer()
 	})
+
+	ws.OnLanguageChanged = func(lang string) {
+		fyne.Do(func() {
+			displayVal, ok := langDisplayMap[lang]
+			if ok && sysLangSelect.Selected != displayVal {
+				sysLangSelect.SetSelected(displayVal)
+			}
+		})
+	}
+
 	sm.Mu.RLock()
 	initialLangCode := sm.Data.Language
 	sm.Mu.RUnlock()

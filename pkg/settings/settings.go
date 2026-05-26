@@ -121,7 +121,7 @@ func DefaultSettings() AppSettings {
 		UseGlobalOffset:   true,
 		AllowRemoteAccess: false,
 		WebPort:           "5000",
-		Language:          "ko",
+		Language:          "en",
 	}
 }
 
@@ -139,7 +139,13 @@ func (sm *SettingsManager) Load() error {
 		return err
 	}
 
-	return json.Unmarshal(data, &sm.Data)
+	err = json.Unmarshal(data, &sm.Data)
+	if err == nil {
+		if sm.Data.Language == "" {
+			sm.Data.Language = "en"
+		}
+	}
+	return err
 }
 
 // Save saves configuration to settings file

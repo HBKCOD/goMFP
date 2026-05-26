@@ -38,6 +38,7 @@ type WebServer struct {
 	clientsMu   sync.Mutex
 	tcodeLog    chan string
 	stateBroadcast chan interface{}
+	OnLanguageChanged func(string)
 
 	server      *http.Server
 	serverMu    sync.Mutex
@@ -204,7 +205,7 @@ func (ws *WebServer) handleWSAction(action string, req map[string]interface{}, c
 	case "set_player":
 		if name, ok := req["name"].(string); ok {
 			ws.coord.SetActivePlayer(name)
-			ws.broadcastSettings()
+			ws.BroadcastSettings()
 		}
 	case "connect_player":
 		if name, ok := req["name"].(string); ok {
@@ -231,7 +232,7 @@ func (ws *WebServer) handleWSAction(action string, req map[string]interface{}, c
 				var axisSet settings.AxisSettings
 				if err := json.Unmarshal(data, &axisSet); err == nil {
 					ws.coord.SetAxisSettings(axisName, &axisSet)
-					ws.broadcastSettings()
+					ws.BroadcastSettings()
 				}
 			}
 		}
@@ -242,7 +243,7 @@ func (ws *WebServer) handleWSAction(action string, req map[string]interface{}, c
 		autoConnect, ok3 := req["auto_connect"].(bool)
 		if ok1 && ok2 && ok3 {
 			ws.coord.SetPlayerSettings(pName, endpoint, password, autoConnect)
-			ws.broadcastSettings()
+			ws.BroadcastSettings()
 		}
 	case "save_output":
 		oName, ok1 := req["output"].(string)
@@ -252,7 +253,7 @@ func (ws *WebServer) handleWSAction(action string, req map[string]interface{}, c
 		autoConnect, ok5 := req["auto_connect"].(bool)
 		if ok1 && ok2 && ok3 && ok4 && ok5 {
 			ws.coord.SetOutputSettings(oName, endpoint, int(baud), filePath, autoConnect)
-			ws.broadcastSettings()
+			ws.BroadcastSettings()
 		}
 	case "load_manual_script":
 		axis, ok1 := req["axis"].(string)
@@ -272,7 +273,7 @@ func (ws *WebServer) handleWSAction(action string, req map[string]interface{}, c
 			ws.sm.Data.ScriptDirectories = strDirs
 			ws.sm.Mu.Unlock()
 			ws.sm.Save()
-			ws.broadcastSettings()
+			ws.BroadcastSettings()
 		}
 	case "save_global_offset":
 		offset, ok1 := req["global_offset"].(float64)
@@ -289,7 +290,7 @@ func (ws *WebServer) handleWSAction(action string, req map[string]interface{}, c
 			}
 			ws.sm.Mu.Unlock()
 			ws.sm.Save()
-			ws.broadcastSettings()
+			ws.BroadcastSettings()
 		}
 	case "save_remote_access":
 		allowRemote, ok := req["allow_remote_access"].(bool)
@@ -299,7 +300,7 @@ func (ws *WebServer) handleWSAction(action string, req map[string]interface{}, c
 			ws.sm.Data.AllowRemoteAccess = allowRemote
 			ws.sm.Mu.Unlock()
 			ws.sm.Save()
-			ws.broadcastSettings()
+			ws.BroadcastSettings()
 			if changed {
 				ws.RebindServer()
 			}
@@ -311,7 +312,10 @@ func (ws *WebServer) handleWSAction(action string, req map[string]interface{}, c
 			ws.sm.Data.Language = lang
 			ws.sm.Mu.Unlock()
 			ws.sm.Save()
-			ws.broadcastSettings()
+			ws.BroadcastSettings()
+			if ws.OnLanguageChanged != nil {
+				ws.OnLanguageChanged(lang)
+			}
 		}
 	}
 }
@@ -455,7 +459,7 @@ func (ws *WebServer) sendSettings(conn *websocket.Conn) {
 	}
 }
 
-func (ws *WebServer) broadcastSettings() {
+func (ws *WebServer) BroadcastSettings() {
 	ws.sm.Mu.RLock()
 	defer ws.sm.Mu.RUnlock()
 

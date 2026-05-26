@@ -264,7 +264,7 @@ function selectAxis(key) {
     // Update loaded file text
     const dropzone = document.getElementById("script-dropzone");
     const scriptInfo = document.getElementById("loaded-script-info");
-    const lang = appSettings ? appSettings.language || "ko" : "ko";
+    const lang = appSettings ? appSettings.language || "en" : "en";
     const dict = translations[lang];
     if (activeState && activeState.axes[key] && activeState.axes[key].script_loaded) {
         scriptInfo.innerText = `${dict.loaded_script_prefix}${activeState.axes[key].script_name}`;
@@ -292,7 +292,7 @@ function updateSettingsUI() {
     selectAxis(currentAxis);
 
     // Update language selection
-    const lang = appSettings.language || "ko";
+    const lang = appSettings.language || "en";
     if (document.getElementById("header-lang-select")) {
         document.getElementById("header-lang-select").value = lang;
     }
@@ -337,7 +337,7 @@ function updateOutputsListUI() {
     const container = document.getElementById("outputs-list-container");
     container.innerHTML = "";
 
-    const lang = appSettings.language || "ko";
+    const lang = appSettings.language || "en";
     const dict = translations[lang];
 
     Object.keys(outputs).forEach(key => {
@@ -370,7 +370,7 @@ function updateScriptDirectoriesUI() {
     const container = document.getElementById("script-dirs-list-container");
     container.innerHTML = "";
 
-    const lang = appSettings.language || "ko";
+    const lang = appSettings.language || "en";
     const dict = translations[lang];
 
     const dirs = appSettings.script_directories || [];
@@ -406,7 +406,7 @@ let lastVideoPath = "";
 function updateStateUI() {
     if (!activeState) return;
 
-    const lang = appSettings ? appSettings.language || "ko" : "ko";
+    const lang = appSettings ? appSettings.language || "en" : "en";
     const dict = translations[lang];
 
     // Update indicators
