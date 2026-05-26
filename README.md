@@ -7,6 +7,8 @@
 
 **goMFP** is a high-performance media synchronization and haptic device control software (MultiFunPlayer Control Center) developed in Go. It offers a beautiful, responsive desktop GUI environment based on Fyne v2, alongside a modern web interface (WebUI) for easy access, real-time monitoring, and tuning from mobile and remote devices.
 
+Coded with Antigravity
+
 ---
 
 ## 🌟 Key Features
