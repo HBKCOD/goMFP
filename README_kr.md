@@ -5,6 +5,8 @@
 
 **goMFP**는 Go 언어로 개발된 고성능 미디어 동기화 및 햅틱 디바이스 제어 소프트웨어(MultiFunPlayer 제어 센터)입니다. Fyne v2 기반의 미려하고 반응성이 뛰어난 데스크톱 GUI 환경과 함께, 모바일 및 원격 디바이스에서도 간편하게 접속하여 실시간 모니터링과 튜닝이 가능한 모던 웹 인터페이스(WebUI)를 동시에 제공합니다.
 
+Coded with Antigravity
+
 ---
 
 ## 🌟 주요 특징 (Key Features)
